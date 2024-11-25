@@ -8,7 +8,9 @@ import numpy as np
 
 with warnings.catch_warnings():
     # Filter out DeprecationWarnings raised from pkg_resources
-    warnings.filterwarnings("ignore", "pkg_resources is deprecated as an API", category=DeprecationWarning)
+    warnings.filterwarnings(
+        "ignore", "pkg_resources is deprecated as an API", category=DeprecationWarning
+    )
     import pygame
 
 import pymunk
@@ -205,7 +207,10 @@ class PushTEnv(gym.Env):
             )
         elif self.obs_type == "pixels":
             self.observation_space = spaces.Box(
-                low=0, high=255, shape=(self.observation_height, self.observation_width, 3), dtype=np.uint8
+                low=0,
+                high=255,
+                shape=(self.observation_height, self.observation_width, 3),
+                dtype=np.uint8,
             )
         elif self.obs_type == "pixels_agent_pos":
             self.observation_space = spaces.Dict(
@@ -219,6 +224,27 @@ class PushTEnv(gym.Env):
                     "agent_pos": spaces.Box(
                         low=np.array([0, 0]),
                         high=np.array([512, 512]),
+                        dtype=np.float64,
+                    ),
+                }
+            )
+        elif self.obs_type == "pixel_agent_pos_env_state":
+            self.observation_space = spaces.Dict(
+                {
+                    "pixels": spaces.Box(
+                        low=0,
+                        high=255,
+                        shape=(self.observation_height, self.observation_width, 3),
+                        dtype=np.uint8,
+                    ),
+                    "agent_pos": spaces.Box(
+                        low=np.array([0, 0]),
+                        high=np.array([512, 512]),
+                        dtype=np.float64,
+                    ),
+                    "env_state": spaces.Box(
+                        low=np.array([0, 0, 0]),
+                        high=np.array([512, 512, 2 * np.pi]),
                         dtype=np.float64,
                     ),
                 }
@@ -305,7 +331,10 @@ class PushTEnv(gym.Env):
         goal_body = self.get_goal_pose_body(self.goal_pose)
         for shape in self.block.shapes:
             goal_points = [goal_body.local_to_world(v) for v in shape.get_vertices()]
-            goal_points = [pymunk.pygame_util.to_pygame(point, draw_options.surface) for point in goal_points]
+            goal_points = [
+                pymunk.pygame_util.to_pygame(point, draw_options.surface)
+                for point in goal_points
+            ]
             goal_points += [goal_points[0]]
             pygame.draw.polygon(screen, pygame.Color("LightGreen"), goal_points)
 
@@ -344,7 +373,9 @@ class PushTEnv(gym.Env):
         screen = self._draw()  # draw the environment on a screen
 
         if self.render_mode == "rgb_array":
-            return self._get_img(screen, width=width, height=height, render_action=visualize)
+            return self._get_img(
+                screen, width=width, height=height, render_action=visualize
+            )
         elif self.render_mode == "human":
             if self.window is None:
                 pygame.init()
@@ -357,7 +388,9 @@ class PushTEnv(gym.Env):
                 screen, screen.get_rect()
             )  # copy our drawings from `screen` to the visible window
             pygame.event.pump()
-            self.clock.tick(self.metadata["render_fps"] * int(1 / (self.dt * self.control_hz)))
+            self.clock.tick(
+                self.metadata["render_fps"] * int(1 / (self.dt * self.control_hz))
+            )
             pygame.display.update()
         else:
             raise ValueError(self.render_mode)
@@ -372,7 +405,9 @@ class PushTEnv(gym.Env):
 
         def act(obs):
             act = None
-            mouse_position = pymunk.pygame_util.from_pygame(Vec2d(*pygame.mouse.get_pos()), self.screen)
+            mouse_position = pymunk.pygame_util.from_pygame(
+                Vec2d(*pygame.mouse.get_pos()), self.screen
+            )
             if self.teleop or (mouse_position - self.agent.position).length < 30:
                 self.teleop = True
                 act = mouse_position
@@ -385,7 +420,9 @@ class PushTEnv(gym.Env):
             agent_position = np.array(self.agent.position)
             block_position = np.array(self.block.position)
             block_angle = self.block.angle % (2 * np.pi)
-            return np.concatenate([agent_position, block_position, [block_angle]], dtype=np.float64)
+            return np.concatenate(
+                [agent_position, block_position, [block_angle]], dtype=np.float64
+            )
 
         if self.obs_type == "environment_state_agent_pos":
             return {
@@ -400,6 +437,18 @@ class PushTEnv(gym.Env):
             return {
                 "pixels": pixels,
                 "agent_pos": np.array(self.agent.position),
+            }
+        if self.obs_type == "pixel_agent_pos_env_state":
+            agent_position = np.array(self.agent.position)
+            block_position = np.array(self.block.position)
+            block_angle = self.block.angle % (2 * np.pi)
+            return {
+                "pixels": pixels,
+                "agent_pos": agent_position,
+                "env_state": np.array(
+                    [block_position[0], block_position[1], block_angle],
+                    dtype=np.float64,
+                ),
             }
 
     @staticmethod
@@ -470,7 +519,9 @@ class PushTEnv(gym.Env):
     def add_segment(space, a, b, radius):
         # TODO(rcadene): rename add_segment to make_segment, since it is not added to the space
         shape = pymunk.Segment(space.static_body, a, b, radius)
-        shape.color = pygame.Color("LightGray")  # https://htmlcolorcodes.com/color-names
+        shape.color = pygame.Color(
+            "LightGray"
+        )  # https://htmlcolorcodes.com/color-names
         return shape
 
     @staticmethod
@@ -510,7 +561,9 @@ class PushTEnv(gym.Env):
         shape2.color = pygame.Color(color)
         shape1.filter = pymunk.ShapeFilter(mask=mask)
         shape2.filter = pymunk.ShapeFilter(mask=mask)
-        body.center_of_gravity = (shape1.center_of_gravity + shape2.center_of_gravity) / 2
+        body.center_of_gravity = (
+            shape1.center_of_gravity + shape2.center_of_gravity
+        ) / 2
         body.angle = angle
         body.position = position
         body.friction = 1
